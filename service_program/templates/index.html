@@ -1,0 +1,133 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Walk Pattern Detect</title>
+    <style>
+      body,h1,h2,h3,h4,h5,h6 {font-family: "Lato", sans-serif}
+      .w3-bar,h1,button {font-family: "Montserrat", sans-serif}
+      .fa-anchor,.fa-coffee {font-size:200px}
+      /* #button {
+        width: 500px;
+        height:60px;
+        font-size: 40px;
+      } */
+      .value {
+        font-size: 25px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="w3-container w3-red w3-center">
+      <h1>WALKING PATTERN DETECTION</h1>
+      <p class="w3-xlarge">team 18</p>
+      <button class="w3-button w3-black w3-padding-large w3-large w3-margin-top" id="button" onClick="deviceMotionRequest()">Get Started</button>
+    </header>
+    <!-- First Grid -->
+    <div class="w3-row-padding w3-padding-64 w3-container w3-center">
+      <div class="w3-content">
+          <h1>Acceleration</h1>
+          <span class="value" id="x">0</span>
+          <span class="value" id="y">0</span>
+          <span class="value" id="z">0</span>
+          <h1>Gyro</h1>
+          <span class="value" id="alpha">0</span>
+          <span class="value" id="beta">0</span>
+          <span class="value" id="gamma">0</span>        
+          <h1>Result</h1>
+          <h2 id="walk"></h2>
+          <h2 id="result"></h2>
+      </div>
+    </div>
+    <script>
+      let count = 0;
+      let seq_len = 128;
+      let start_len = 40000;
+      let end_len = seq_len + start_len;
+      var acc_x = [];
+      var acc_y = [];
+      var acc_z = [];
+      var gyr_x = [];
+      var gyr_y = [];
+      var gyr_z = [];
+      function deviceMotionRequest () {
+        if (DeviceMotionEvent.requestPermission) {
+          DeviceMotionEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              window.addEventListener("devicemotion", function (event1) {
+                if (!event1.accelerationIncludingGravity) {
+                  alert('event.accelerationIncludingGravity is null');
+                  return;
+                }
+                window.addEventListener( "deviceorientation", function (event2) {
+                  if (!event2.alpha) {
+                    alert('event.alpha is null');
+                    return;
+                  }
+                  count += 1;
+                  if(start_len <= count &&  count < end_len) {
+                    a = event1.accelerationIncludingGravity.x
+                    b = event1.accelerationIncludingGravity.y
+                    c = event1.accelerationIncludingGravity.z
+                    d = event2.alpha
+                    e = event2.beta
+                    f = event2.gamma
+                    acc_x.push(a);
+                    acc_y.push(b);
+                    acc_z.push(c);
+                    gyr_x.push(d);
+                    gyr_y.push(e);
+                    gyr_z.push(f);
+                    document.getElementById('x').innerHTML = a;
+                    document.getElementById('y').innerHTML = b;
+                    document.getElementById('z').innerHTML = c;
+                    document.getElementById('alpha').innerHTML = d;
+                    document.getElementById('beta').innerHTML = e;
+                    document.getElementById('gamma').innerHTML = f;
+                  }else if(count == end_len){
+                    fetch('/post', {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json"},
+                      body: JSON.stringify({"x":acc_x, "y":acc_y, "z":acc_z, "alpha":gyr_x, "beta":gyr_y, "gamma":gyr_z})
+                    }).then(
+                      console.log("POST SUCCESS")
+                    ).then(
+                      function(response) {
+                        response.json().then(
+                          function(json){
+                            console.log(json['result'])
+                            document.getElementById('result').innerHTML = json['result'];
+                            document.getElementById('walk').innerHTML = json['walk'];
+                          }
+                        )
+                      }
+                    ).catch(
+                      e => console.error(e)
+                    );
+                    permissionState = "";
+                    acc_x = [];
+                    acc_y = [];
+                    acc_z = [];
+                    gyr_x = [];
+                    gyr_y = [];
+                    gyr_z = [];
+                    count = 0;
+                    return;
+                  }else{
+                    return;
+                  }
+                })
+              })
+            }
+          }).catch(console.error);
+        } else {
+          alert('DeviceMotionEvent.requestPermission is not found')
+        }}
+    </script>
+  </body>
+</html>

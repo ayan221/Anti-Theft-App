@@ -1,0 +1,9 @@
+# general requirements
+numpy
+wheel
+torchinfo
+pytorch-ignite
+matplotlib
+#server
+flask
+flask_cors
